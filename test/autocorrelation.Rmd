@@ -1,0 +1,114 @@
+---
+title: "Calibrating Metabolomics Intra-batch Effect by Robust Linear Regression and First Order Autoregression"
+author: "Tu Hu"
+date: "2/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background 
+
+Roubust linear regression (rlm)
+First Order Autoregression - AR(1)
+
+## 
+```{r Load data and define the feature, include=FALSE}
+library(libra)
+require(dplyr)
+require(tidyr)
+load("/Users/tuhu/Projects/libra/data/multiomics_ad_serum_pos")
+Feature <- "F1"
+multiomics_ad_serum_pos <-
+  multiomics_ad_serum_pos %>% 
+  mutate(intensity = ifelse(is.na(intensity), .01, intensity))
+```
+
+## Plot raw data
+The raw data of feature `r Feature` has a strong linear tendency.
+```{r raw data}
+
+plotFeature.method(multiomics_ad_serum_pos,
+                   Feature, 
+                   calibration_method = "Raw")
+```
+
+## Calibrate with robust linear regression and plot
+Roubust linear regression (rlm) can calibrate the linear batch effect.
+```{r rlm}
+data_rlm <-
+  multiomics_ad_serum_pos %>%
+  filter(feature == Feature) %>%
+  calibrateBatch.intra()
+
+acf <- 
+  data_rlm$intensity_calibrated %>% acf()
+
+data_rlm %>%
+  mutate(feature = Feature,
+         intensity = intensity_calibrated) %>%
+  plotFeature.method(Feature, calibration_method = "rlm")
+```
+
+## Calibrate with AR(1) and plot
+```{r AR(1)}
+data_ar1 <-
+  multiomics_ad_serum_pos %>%
+  filter(feature == Feature) %>%
+  pull(intensity) %>% ar.ols(order.max = 1)
+
+intensity_ar1 <- data_ar1$resid
+intensity_ar1[1] <- 
+  multiomics_ad_serum_pos %>%
+  filter(feature == Feature,
+         injection_sequence == "1") %>%
+  pull(intensity)
+data.frame(intensity = intensity_ar1,
+           injection_sequence = 1: length(data_ar1$resid),
+           feature = Feature) %>%
+  plotFeature.method(Feature = Feature, calibration_method = "AR(1)")
+
+```
+
+## Calibrate with rlm + AR(1), then plot
+```{r rlm+AR(1)}
+data_rlm_ar1 <-
+  data_rlm %>%
+  pull(intensity_calibrated) %>%
+  ar.ols(order.max = 1)
+data.frame(intensity = data_rlm_ar1$resid,
+           injection_sequence = 1: length(data_rlm_ar1$resid),
+           feature = Feature) %>%
+  plotFeature.method(Feature = Feature, calibration_method = "rlm+Ar(1)")
+```
+
+## Calibrate with AR(1) + rlm, then plot
+```{r AR(1)+rlm}
+data_ar1_fill1 <- data_ar1$resid
+data_ar1_fill1[1] <-
+  multiomics_ad_serum_pos %>%
+  filter(feature == Feature,
+         injection_sequence == 1) %>%
+  pull(intensity)
+data_ar1_rlm <-
+  data.frame(intensity = data_ar1_fill1,
+             injection_sequence = 1: length(data_ar1_fill1)) %>%
+  calibrateBatch.intra()
+data.frame(intensity = data_ar1_fill1,
+           injection_sequence = 1: length(data_ar1$resid),
+           feature = Feature) %>%
+  plotFeature.method(Feature = Feature, calibration_method = "Ar(1)+rlm")
+```
+
+## Investigate Whether Time Effect Exists
+```{r}
+acf <- 
+  multiomics_ad_serum_pos %>% 
+  filter(feature == Feature) %>% 
+  pull(intensity) %>% acf
+acf[["acf"]][2]
+```
+
+
