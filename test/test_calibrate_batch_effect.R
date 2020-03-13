@@ -225,3 +225,20 @@ acf_ar1 <-
              acf_ar1_value) %>%
   remove_rownames()
 
+
+
+#####calibrate with I2-AR(1)#####
+data_calibrate_i2ar1 <-
+  data %>%
+  mutate(intensity = ifelse(is.na(intensity), .01, intensity)) %>%
+  mutate(intensity_square = intensity**2) %>%
+  split(.$feature) %>%
+  map(function(x){
+    ar1 <- x$intensity %>% ar.ols(order.max = 1)
+  })
+data_calibrate_i2ar1_value <-
+  data_calibrate_ar1 %>%
+  map_dfc(function(x){
+    x$resid
+  })
+
