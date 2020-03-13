@@ -242,3 +242,37 @@ data_calibrate_i2ar1_value <-
     x$resid
   })
 
+data_calibrate_i2ar1_value_Na <-
+  data_calibrate_i2ar1_value[1,] %>%
+  pivot_longer(colnames(data_calibrate_i2ar1_value),
+               names_to = "Feature",
+               values_to = "Intensity") %>%
+  split(.$Feature) %>%
+  map_dfr(function(x){
+    x %>% mutate(e1 = .$Feature %>% ar_inverse_predict)
+  })
+
+data_calibrate_i2ar1_value_e1 <-
+  data_calibrate_i2ar1_value_Na %>%
+  mutate(Intensity = ifelse(is.na(Intensity),
+                            e1,
+                            Intensity)) %>%
+  select(-e1) %>%
+  pivot_wider(names_from = Feature, values_from = Intensity)
+
+col_max <-
+  colnames(data_calibrate_i2ar1_value) %>%
+  str_match("\\d{1,4}") %>%
+  as.numeric() %>%
+  max
+data_calibrate_i2ar1_value[1,] <- data_calibrate_i2ar1_value_e1 %>% as.numeric()
+
+data_calibrate_i2ar1_value_long <-
+  data_calibrate_i2ar1_value %>%
+  select(paste0("F",1:col_max)) %>%
+  mutate(injection_sequence = data_calibrate_rlm_wide$injection_sequence,
+         sample_name = data_calibrate_rlm_wide$sample_name) %>%
+  pivot_longer(paste0("F",1:col_max),
+               names_to = "feature",
+               values_to = "intensity") %>%
+  arrange(feature, injection_sequence)
