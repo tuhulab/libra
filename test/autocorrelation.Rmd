@@ -29,10 +29,7 @@ multiomics_ad_serum_pos <-
 ## Plot raw data
 The raw data of feature `r Feature` has a strong linear tendency.
 ```{r raw data}
-
-plotFeature.method(multiomics_ad_serum_pos,
-                   Feature, 
-                   calibration_method = "Raw")
+plotFeature.method(multiomics_ad_serum_pos, Feature, calibration_method = "Raw")
 ```
 
 ## Calibrate with robust linear regression and plot
@@ -41,7 +38,7 @@ Roubust linear regression (rlm) can calibrate the linear batch effect.
 data_rlm <-
   multiomics_ad_serum_pos %>%
   filter(feature == Feature) %>%
-  calibrateBatch.intra()
+  calibrateBatch.intra.rlm()
 
 acf <- 
   data_rlm$intensity_calibrated %>% acf()

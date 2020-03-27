@@ -22,9 +22,9 @@ Feature <- "F2"
 
 ####plotFeature####
 intensity <-
-   multiomics_ad_serum_pos %>%
-   filter(feature == Feature) %>%
-   pull(intensity)
+    multiomics_ad_serum_pos %>%
+    filter(feature == Feature) %>%
+    pull(intensity)
 injection_sequence <- multiomics_ad_serum_pos %>%
                          filter(feature == Feature) %>%
                          pull(injection_sequence)
