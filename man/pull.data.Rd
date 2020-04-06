@@ -4,11 +4,7 @@
 \alias{pull.data}
 \title{Pull pre-processed data and summary statistics based on the regular expression (naming pattern)}
 \usage{
-pull.data(
-  pattern = ...,
-  data_table. = data_table,
-  sample_table. = sample_table
-)
+\method{pull}{data}(pattern = ..., data_table. = data_table, sample_table. = sample_table)
 }
 \arguments{
 \item{pattern}{regular expression in sample_table}

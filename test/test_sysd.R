@@ -52,7 +52,6 @@ data_t_p_na_n <- data_t_p_na %>% group_by(Feature, Plate) %>% nest()
 # start from intra batch effect ------
 
 # reshape data
-data_reshape_n <- data_t_p_na %>% mutate(intensity = Intensity) %>% group_by(Feature, Plate) %>% nest()
 
 calibrateBatch.intra.rlm <- function(data=...,
                                      intensity = intensity,
@@ -73,17 +72,45 @@ calibrateBatch.intra.rlm <- function(data=...,
 
   # calibrted data
   intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-  calibrated_data <- data %>% mutate(intensity_calibrated = intensity_calibration, center_intensity)
+  calibrated_data <- data %>% mutate(intensity_intra_calibrated = intensity_calibration, center_intensity)
   return(calibrated_data)
 }
 
-data_reshape_n_intra <- data_reshape_n %>% mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm)) %>% select(-data)
+# data_t_p_na %>% group_by(Feature, Plate) %>% nest() %>% mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm, intensity=Intensity)) %>% select(-data)
+
+# data_reshape_n <- data_t_p_na %>% mutate(intensity = Intensity) %>% group_by(Feature, Plate) %>% nest()
+data_reshape_n_intra <- data_reshape_n %>% mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm))
 data_reshape_n_intra_inter <- data_reshape_n_intra %>% mutate(intra_batch_center=map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>% ungroup()
-
 multi_batch_center <- data_reshape_n_intra_inter %>% mutate(intra_batch_center = as.numeric(intra_batch_center)) %>% group_by(Feature) %>% summarize(multi_batch_center = mean(intra_batch_center))
-
 calibration_matrix <- data_reshape_n_intra_inter %>% mutate(intra_batch_center = as.numeric(intra_batch_center)) %>% left_join(multi_batch_center) %>% mutate(facotr = intra_batch_center/multi_batch_center)
-
 data_reshape_n_intra_inter_indi <- calibration_matrix %>% unnest()
-
 indi_intensity <- data_reshape_n_intra_inter_indi %>% mutate(intensity_final = intensity_calibrated/facotr)
+
+
+# Calibrate multibatch
+calibrateBatch.inter.rlm <- function(data = ...,
+                                     feature = feature,
+                                     batch = batch,
+                                     intensity = intensity){
+    feature <- rlang::enexpr(feature)
+    batch <- rlang::enexpr(batch)
+    intensity <- rlang::enexpr(intensity)
+
+    data_n <- data %>%
+        group_by(!! feature, !! batch) %>% nest() %>%
+        mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm, intensity= !! intensity)) %>%
+        select(-data)
+
+data_n_intra <- data_n %>%
+    mutate(intra_batch_center=map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>%
+    ungroup() %>% mutate(intra_batch_center = as.numeric(intra_batch_center))
+
+data_n_inter <- data_n_intra %>%
+    group_by(!! feature) %>% summarize(multi_batch_center = mean(intra_batch_center))
+
+data_n_intra_inter <- data_n_intra %>%
+    left_join(data_n_inter, by = rlang::as_string(feature)) %>% mutate(factor = intra_batch_center / multi_batch_center) %>%
+    unnest(cols = c(data_intra_calibrate)) %>% mutate(intensity_intra_inter_calibrated = intensity_intra_calibrated / factor)
+}
+
+data_t_p_na_interc <- calibrateBatch.inter.rlm(data = data_t_p_na, feature = Feature, batch = Plate, intensity = Intensity)
