@@ -1,4 +1,6 @@
-calibrateBatch.intra.rlm <- function(data = ...) {
+calibrateBatch.intra.rlm <- function(data = ...,
+                                     intensity = intensity,
+                                     injection_sequence = injection_sequence) {
     intensity <- data %>% dplyr::pull(intensity)
     injection_sequence <- data %>% dplyr::pull(injection_sequence)
     rlm <- MASS::rlm(intensity ~ injection_sequence)

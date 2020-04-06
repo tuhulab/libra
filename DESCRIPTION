@@ -12,5 +12,6 @@ Imports:
     dplyr,
     ggplot2,
     MASS(>= 7.3.0),
-    graphics
+    graphics,
+    rlang
 RoxygenNote: 7.0.2
