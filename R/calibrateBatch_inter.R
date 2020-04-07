@@ -15,7 +15,7 @@ calibrateBatch.inter.rlm <- function(data = ...,
 
   data_n <- data %>%
     group_by(!! feature, !! batch) %>% nest() %>%
-    mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm, intensity= !! intensity)) %>%
+    mutate(data_intra_calibrate = map(data, libra::calibrateBatch.intra.rlm, intensity= !! intensity)) %>%
     select(-data)
 
   data_n_intra <- data_n %>%

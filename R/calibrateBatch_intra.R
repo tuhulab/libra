@@ -13,11 +13,13 @@ calibrateBatch.intra.rlm.old <- function(data = ...,
     center_intensity <- center_injec_seq * slope + intercept
     # calibrted data
     intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-    calibrated_data <- data.frame(intensity_calibrated = intensity_calibration, injection_sequence)
+    calibrated_data <- data.frame(intensity_intra_calibrated = intensity_calibration, injection_sequence)
     return(calibrated_data)
 }
 
-#' Intra batch calibration by robust linear modelling (rlm)
+
+
+#' Intra batch calibration by robust linear modelling - one feature (rlm)
 #'
 #' @param data Metabolomics data in long-format
 #' @param intensity The column name of intensity (by default intensity)
@@ -43,7 +45,7 @@ calibrateBatch.intra.rlm <- function(data=...,
 
     # calibrted data
     intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-    calibrated_data <- data %>% mutate(intensity_calibrated = intensity_calibration, center_intensity)
+    calibrated_data <- data %>% mutate(intensity_intra_calibrated = intensity_calibration, center_intensity)
     return(calibrated_data)
 }
 
