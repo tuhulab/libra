@@ -6,12 +6,13 @@
 pull.data <- function(pattern = ...,
                       data_table. = data_table,
                       sample_table. = sample_table){
-  datalist <- list()
-  datalist$pattern <- pattern
-  datalist$index <- sample_table.$filename %>% str_detect(pattern) %>% which()
-  datalist$data <- data_table. %>% select(1:6, paste0("X", datalist$index))
-  datalist$intensity <- data_table. %>% select(paste0("X", datalist$index))
-  datalist$intensity_mean <- datalist$intensity %>% rowMeans(na.rm = TRUE)
-  datalist$prevalence <- 1 - (datalist$intensity %>% is.na() %>% rowMeans())
-  return(datalist)
+    datalist <- list()
+    datalist$pattern <- pattern
+    datalist$index <- sample_table.$filename %>% stringr::str_detect(pattern) %>% which()
+    datalist$data <- data_table. %>% dplyr::select(1:6, paste0("X", datalist$index))
+    datalist$intensity <- data_table. %>% dplyr::select(paste0("X", datalist$index))
+    datalist$intensity_mean <- datalist$intensity %>% rowMeans(na.rm = TRUE)
+    datalist$prevalence <- 1 - (datalist$intensity %>% is.na() %>% rowMeans())
+    datalist$intensity[is.na(datalist$intensity)] <- 0
+    return(datalist)
 }
