@@ -26,11 +26,29 @@ calibrateBatch.intra.rlm.old <- function(data = ...,
 #' @param injection_sequence The column name of injection sequence (by default injection_sequence)
 #' @example
 #' data.frame(intensity = runif(50, min=10, max=50), injection_sequence = 1:50) %>% libra::calibrateBatch.intra.rlm()
-calibrateBatch.intra.rlm <- function(data=...,
+calibrateBatch.intra.rlm <- function(data = ...,
                                      intensity = intensity,
-                                     injection_sequence = injection_sequence){
+                                     injection_sequence = injection_sequence,
+                                     feature = feature){
+
     intensity <- rlang::enexpr(intensity)
     injection_sequence <- rlang::enexpr(injection_sequence)
+    feature <- rlang::enexpr(feature)
+
+    data_n <- data %>% dplyr::group_by(!! feature) %>% tidyr::nest()
+    data_n_c <- data_n %>% dplyr::mutate(data_calibrated = purrr::map(data, calibrateBatch.intra.rlm.single.feature,
+                                                                      intensity = !!intensity,
+                                                                      injection_sequence = !! injection_sequence)) %>% dplyr::select(-data) %>% tidyr::unnest(cols = c(data_calibrated)) %>% dplyr::select(-center_intensity)
+    return(data_n_c)
+}
+
+calibrateBatch.intra.rlm.single.feature <- function(data = ...,
+                                                    intensity = intensity,
+                                                    injection_sequence = injection_sequence){
+
+    intensity <- rlang::enexpr(intensity)
+    injection_sequence <- rlang::enexpr(injection_sequence)
+
     intensity. <- data %>% dplyr::pull(!!intensity)
     injection_sequence. <- data %>% dplyr::pull(!!injection_sequence)
 
@@ -45,7 +63,7 @@ calibrateBatch.intra.rlm <- function(data=...,
 
     # calibrted data
     intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-    calibrated_data <- data %>% mutate(intensity_intra_calibrated = intensity_calibration, center_intensity)
+    calibrated_data <- data %>% dplyr::mutate(intensity_intra_calibrated = intensity_calibration, center_intensity)
     return(calibrated_data)
 }
 
