@@ -3,7 +3,4 @@
 .RData
 .Ruserdata
 data/
-test/test_sysd.R
-test/test_ad-urine.R
-test/test_ad-multiomics-serum.R
-test/SysDiet.zip
+test/
