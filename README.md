@@ -4,6 +4,16 @@ Repo for libra - the data toolbox for working with LC-MS based metabolomics (cle
 ## Install
 devtools::install_github("tuhulab/libra")
 
+## Before start - data transformation
+Metabolomics data needs to be transformed as data_table and sample_sample to start libra calibration. These two tables can be easily generated from previous [XCMS/CAMERA workflow](https://nexs-metabolomics.gitlab.io/INM/coffee-walkthrough/06_CAMERA.html).
+
+data_table should compromize columns: mz, rt, X1, X2, X3, ... Xn. "Xi" denotes each sample, which each row stores intensity of each feature.
+
+sample_table should compromize column: sample_name, code, batch (if multiple batch is involved). 
+
+### Two tables
+
+
 ## Workflow
 	# Load data ----------------------------------
     library(tidyr)
