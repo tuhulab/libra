@@ -1,21 +1,21 @@
 #' Deprecated calibration method (without the support of custom column name)
-calibrateBatch.intra.rlm.old <- function(data = ...,
-                                     intensity = intensity,
-                                     injection_sequence = injection_sequence) {
-    intensity <- data %>% dplyr::pull(intensity)
-    injection_sequence <- data %>% dplyr::pull(injection_sequence)
-    rlm <- MASS::rlm(intensity ~ injection_sequence)
-    rlm_summary <- rlm %>% summary
-    slope <- rlm_summary[["coefficients"]][2, 1]
-    intercept <- rlm_summary[["coefficients"]][1, 1]
-    # calibration center
-    center_injec_seq <- length(injection_sequence)/2
-    center_intensity <- center_injec_seq * slope + intercept
-    # calibrted data
-    intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-    calibrated_data <- data.frame(intensity_intra_calibrated = intensity_calibration, injection_sequence)
-    return(calibrated_data)
-}
+# calibrateBatch.intra.rlm.old <- function(data = ...,
+#                                      intensity = intensity,
+#                                      injection_sequence = injection_sequence) {
+#     intensity <- data %>% dplyr::pull(intensity)
+#     injection_sequence <- data %>% dplyr::pull(injection_sequence)
+#     rlm <- MASS::rlm(intensity ~ injection_sequence)
+#     rlm_summary <- rlm %>% summary
+#     slope <- rlm_summary[["coefficients"]][2, 1]
+#     intercept <- rlm_summary[["coefficients"]][1, 1]
+#     # calibration center
+#     center_injec_seq <- length(injection_sequence)/2
+#     center_intensity <- center_injec_seq * slope + intercept
+#     # calibrted data
+#     intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
+#     calibrated_data <- data.frame(intensity_intra_calibrated = intensity_calibration, injection_sequence)
+#     return(calibrated_data)
+# }
 
 
 
@@ -36,9 +36,9 @@ calibrateBatch.intra.rlm <- function(data = ...,
     feature <- rlang::enexpr(feature)
 
     data_n <- data %>% dplyr::group_by(!! feature) %>% tidyr::nest()
-    data_n_c <- data_n %>% dplyr::mutate(data_calibrated = purrr::map(data, calibrateBatch.intra.rlm.single.feature,
-                                                                      intensity = !!intensity,
-                                                                      injection_sequence = !! injection_sequence)) %>% dplyr::select(-data) %>% tidyr::unnest(cols = c(data_calibrated)) %>% dplyr::select(-center_intensity)
+    data_n_c <- data_n %>%
+        dplyr::mutate(data_calibrated = purrr::map(data, calibrateBatch.intra.rlm.single.feature, intensity = !!intensity, injection_sequence = !! injection_sequence)) %>%
+        dplyr::select(-data) %>% tidyr::unnest(cols = c(data_calibrated)) %>% select(-center_intensity)
     return(data_n_c)
 }
 

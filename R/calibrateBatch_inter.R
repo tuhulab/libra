@@ -14,12 +14,12 @@ calibrateBatch.inter.rlm <- function(data = ...,
   intensity <- rlang::enexpr(intensity)
 
   data_n <- data %>%
-    dplyr::group_by(!! feature, !! batch) %>% tidyr::nest() %>%
-    dplyr::mutate(data_intra_calibrate = purrr::map(data, libra::calibrateBatch.intra.rlm, intensity= !! intensity)) %>%
+    dplyr::group_by(!! batch, !!feature) %>% tidyr::nest() %>% # very serious error could happen if i am wrong with this line
+    dplyr::mutate(data_intra_calibrate = purrr::map(data, libra::calibrateBatch.intra.rlm.single.feature, intensity= !! intensity)) %>%
     select(-data)
 
   data_n_intra <- data_n %>%
-    dplyr::mutate(intra_batch_center= purrr::map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>%
+    dplyr::mutate(intra_batch_center = purrr::map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>%
     dplyr::ungroup() %>% dplyr::mutate(intra_batch_center = as.numeric(intra_batch_center))
 
   data_n_inter <- data_n_intra %>%

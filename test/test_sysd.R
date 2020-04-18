@@ -47,70 +47,45 @@ data_t_p_na <- data_tidy_pos %>% libra::imputeNA(feature = Feature, intensity = 
 data_t_n_na <- data_tidy_neg %>% libra::imputeNA(feature = Feature, intensity = Intensity)
 
 # calibrate inter batch --------------
-data_t_p_na_n <- data_t_p_na %>% group_by(Feature, Plate) %>% nest()
-
-# start from intra batch effect ------
-
-# reshape data
-
-calibrateBatch.intra.rlm <- function(data=...,
-                                     intensity = intensity,
-                                     injection_sequence = injection_sequence){
-  intensity <- rlang::enexpr(intensity)
-  injection_sequence <- rlang::enexpr(injection_sequence)
-  intensity. <- data %>% dplyr::pull(!!intensity)
-  injection_sequence. <- data %>% dplyr::pull(!!injection_sequence)
-
-  rlm <- MASS::rlm(intensity. ~ injection_sequence.)
-  rlm_summary <- rlm %>% summary
-  slope <- rlm_summary[["coefficients"]][2, 1]
-  intercept <- rlm_summary[["coefficients"]][1, 1]
-
-  # calibration center
-  center_injec_seq <- length(injection_sequence)/2
-  center_intensity <- center_injec_seq * slope + intercept
-
-  # calibrted data
-  intensity_calibration <- rlm_summary[["residuals"]] + center_intensity
-  calibrated_data <- data %>% mutate(intensity_intra_calibrated = intensity_calibration, center_intensity)
-  return(calibrated_data)
-}
-
-# data_t_p_na %>% group_by(Feature, Plate) %>% nest() %>% mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm, intensity=Intensity)) %>% select(-data)
-
-# data_reshape_n <- data_t_p_na %>% mutate(intensity = Intensity) %>% group_by(Feature, Plate) %>% nest()
-data_reshape_n_intra <- data_reshape_n %>% mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm))
-data_reshape_n_intra_inter <- data_reshape_n_intra %>% mutate(intra_batch_center=map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>% ungroup()
-multi_batch_center <- data_reshape_n_intra_inter %>% mutate(intra_batch_center = as.numeric(intra_batch_center)) %>% group_by(Feature) %>% summarize(multi_batch_center = mean(intra_batch_center))
-calibration_matrix <- data_reshape_n_intra_inter %>% mutate(intra_batch_center = as.numeric(intra_batch_center)) %>% left_join(multi_batch_center) %>% mutate(facotr = intra_batch_center/multi_batch_center)
-data_reshape_n_intra_inter_indi <- calibration_matrix %>% unnest()
-indi_intensity <- data_reshape_n_intra_inter_indi %>% mutate(intensity_final = intensity_calibrated/facotr)
-
-
-# Calibrate multibatch
-calibrateBatch.inter.rlm <- function(data = ...,
-                                     feature = feature,
-                                     batch = batch,
-                                     intensity = intensity){
-    feature <- rlang::enexpr(feature)
-    batch <- rlang::enexpr(batch)
-    intensity <- rlang::enexpr(intensity)
-
-    data_n <- data %>%
-        group_by(!! feature, !! batch) %>% nest() %>%
-        mutate(data_intra_calibrate = map(data, calibrateBatch.intra.rlm, intensity= !! intensity)) %>%
-        select(-data)
-
-data_n_intra <- data_n %>%
-    mutate(intra_batch_center=map(data_intra_calibrate, function(x)x[["center_intensity"]] %>% unique)) %>%
-    ungroup() %>% mutate(intra_batch_center = as.numeric(intra_batch_center))
-
-data_n_inter <- data_n_intra %>%
-    group_by(!! feature) %>% summarize(multi_batch_center = mean(intra_batch_center))
-
-data_n_intra_inter <- data_n_intra %>%
-    left_join(data_n_inter, by = rlang::as_string(feature)) %>% mutate(factor = intra_batch_center / multi_batch_center) %>%
-    unnest(cols = c(data_intra_calibrate)) %>% mutate(intensity_intra_inter_calibrated = intensity_intra_calibrated / factor)
-}
-
 data_t_p_na_interc <- calibrateBatch.inter.rlm(data = data_t_p_na, feature = Feature, batch = Plate, intensity = Intensity)
+data_t_n_na_interc <- calibrateBatch.inter.rlm(data = data_t_n_na, feature = Feature, batch = Plate, intensity = Intensity)
+
+readr::write_csv(data_t_p_na_interc, "test/SysDiet_pos_interc.csv")
+readr::write_csv(data_t_n_na_interc, "test/SysDiet_neg_interc.csv")
+
+
+# output ----------------------------
+data_l_p_c <- data_t_p_na_interc %>% select(-Intensity, -intensity_intra_calibrated, -intra_batch_center, -center_intensity, -multi_batch_center, -factor) %>%
+    rename(Intensity_calibrated = intensity_intra_inter_calibrated)
+data_l_n_c <- data_t_n_na_interc %>% select(-Intensity, -intensity_intra_calibrated, -intra_batch_center, -center_intensity, -multi_batch_center, -factor) %>%
+    rename(Intensity_calibrated = intensity_intra_inter_calibrated)
+
+data_w_p_c <- data_l_p_c %>% select(Feature, Intensity_calibrated,
+                      File_name, Subject, Samples, Visit, Diet, Center, S_and_PS) %>%
+               pivot_wider(names_from = Feature, values_from = Intensity_calibrated)
+
+data_w_n_c <- data_l_n_c %>% select(Feature, Intensity_calibrated,
+                                    File_name, Subject, Samples, Visit, Diet, Center, S_and_PS) %>%
+  pivot_wider(names_from = Feature, values_from = Intensity_calibrated)
+
+readr::write_csv(data_l_p_c, "test/SysDiet/SysDiet_pos_interc_long.csv")
+readr::write_csv(data_l_n_c, "test/SysDiet/SysDiet_neg_interc_long.csv")
+
+readr::write_csv(data_w_p_c, "test/SysDiet/SysDiet_pos_interc_wide.csv")
+readr::write_csv(data_w_n_c, "test/SysDiet/SysDiet_neg_interc_wide.csv")
+
+readr::write_csv(data_l_p_c %>% select(Feature, mz, rt, group_camera) %>% distinct(), "test/SysDiet/SysDiet_pos_featureinfo.csv")
+readr::write_csv(data_l_n_c %>% select(Feature, mz, rt, group_camera) %>% distinct(), "test/SysDiet/SysDiet_neg_featureinfo.csv")
+
+### test -----------------------------
+feature <- rlang::expr(Feature)
+batch <- rlang::expr(Plate)
+intensity <- rlang::expr(Intensity)
+data <- data_t_p_na
+
+data_n <- data %>%
+  group_by(!! feature, !! batch) %>% nest()
+
+
+data_n_1 <- data_n %>% mutate(data_intra_calibrate = map(data, libra::calibrateBatch.intra.rlm, intensity = !!intensity))
+
