@@ -8,13 +8,13 @@ devtools::install_github("tuhulab/libra")
 	# Load data ----------------------------------
     library(tidyr)
     library(dplyr)
-    project <- "my project"
+    project <- "my_project"
     biospecimen <- "urine"
     mode <- "pos"
 
-    data_table <- readr::read_csv(file.path("data", "AD-multiomics", biospecimen,
+    data_table <- readr::read_csv(file.path("data", project, biospecimen,
                                             paste0(paste(biospecimen, mode, "raw" ,sep = "_"),".csv")))
-    sample_table <- readr::read_csv(file.path("data", "AD-multiomics", biospecimen,
+    sample_table <- readr::read_csv(file.path("data", project, biospecimen,
                                             paste0(paste(biospecimen, mode, "sampleinfo" ,sep = "_"),".csv"))) %>%
     mutate(sample_name = ifelse(sample_name == "AS21-1", "AD21-1", sample_name))
 
@@ -41,9 +41,9 @@ devtools::install_github("tuhulab/libra")
     # Output data wide format---------------------
     d_output_w <- d_rmSFNaC %>% select(feature, mz, rt, pcgroup, adduct, id_predret, id_kudb, code, intensity_intra_inter_calibrated) %>%
     pivot_wider(names_from = code, values_from = intensity_intra_inter_calibrated)
-    readr::write_csv(d_output_w, file.path("data", "AD-multiomics", biospecimen, paste0(paste(biospecimen, mode, "calibrated", "wide", sep = "_"), ".csv")))
+    readr::write_csv(d_output_w, file.path("data", project, biospecimen, paste0(paste(biospecimen, mode, "calibrated", "wide", sep = "_"), ".csv")))
     readr::write_csv(sample_table %>% select(-mzMLs) %>% filter(code %in% (d_output_w %>% colnames() %>% stringr::str_match("X\\d{1,}") %>% purrr::discard(is.na))),
-                    file.path("data", "AD-multiomics", biospecimen, paste0(paste(biospecimen, mode, "sampleinfo", "calibrated",sep = "_"), ".csv")))
+                    file.path("data", project, biospecimen, paste0(paste(biospecimen, mode, "sampleinfo", "calibrated",sep = "_"), ".csv")))
 
     # Output data long data ----------------------
     readr::write_csv(d_rmSFNaC %>% select(-intensity, -injection_sequence, -intensity_intra_calibrated, -center_intensity, -intra_batch_center, -multi_batch_center, -factor),
