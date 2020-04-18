@@ -1,5 +1,5 @@
 # libra
-Repo for libra - the data toolbox for working with LC-MS based metabolomics (cleaning, calibrating and plotting)
+Repo for libra - the data toolbox for working with LC-MS based metabolomics data (cleaning, calibration and visualization)
 
 ## Install
 devtools::install_github("tuhulab/libra")
