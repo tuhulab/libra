@@ -9,8 +9,8 @@ rm_sample <- function(data.df = ...,
     pivot_longer(colnames(.) %>% stringr::str_match("X\\d{1,}") %>% purrr::discard(is.na), names_to = "code", values_to = "intensity") %>%
     left_join(sample.df, by = "code") %>%
     filter(! sample_name %in% sample_rm) %>%
-    group_by(feature) %>% mutate(injection_sequence = 1:sum(.$feature == "F1")) %>%
-    select(feature, code, mz, rt, pcgroup, adduct, id_predret, id_kudb, intensity, sample_name, injection_sequence)
+    group_by(feature) %>% mutate(injection_sequence = 1:sum(.$feature == "F1"))# %>%
+#    select(feature, code, mz, rt, pcgroup, adduct, id_predret, id_kudb, intensity, sample_name, injection_sequence)
   return(data)
 }
 
@@ -20,10 +20,11 @@ rm_feature.bird <- function(data.df = ...,
                             bird.limit.low = 0.3,
                             bird.limit.high = 6.5){
   col_rt <- rlang::enexpr(col_rt)
-  data <- data.df %>% mutate(bird = ifelse(!! col_rt > bird.limit.high | col_rt < bird.limit.low, # Very important to !!unquote!!
+  data <- data.df %>% mutate(bird = ifelse((!!col_rt) > bird.limit.high | (!!col_rt) < bird.limit.low, # Very important to !!unquote!!
                                            TRUE,
-                                           FALSE)) %>%
-    filter(bird == FALSE) %>% select(-bird)
+                                           FALSE))
+  message(paste("Fraction of Feature Removed (based on birds):", round(mean(data$bird),2)))
+  data_output <- data %>% select(-bird)
   return(data)
 }
 
@@ -51,11 +52,13 @@ detect.birds.old <- function(rt = ...,
 rm_feature.blank <- function(data.df = data_table,
                              pattern.blank = "Blank$|Assay blank",
                              pattern.pool = "Global pool IS$",
+                             var.pattern = filename,
                              threshold.prevalence = 0.6,
                              threshold.intensity.fraction = 0.67){
-    data.blank <- libra::pull.data(pattern.blank)
-    data.pool <- libra::pull.data(pattern.pool)
+    var.pattern = enexpr(var.pattern)
+    data.blank <- libra::pull.data(pattern.blank, !! var.pattern)
+    data.pool <- libra::pull.data(pattern.pool, !! var.pattern)
     noise_index <- (data.blank$prevalence >= threshold.prevalence) & (data.blank$intensity_mean > (threshold.intensity.fraction * data.pool$intensity_mean))
-    message(paste("Fraction of Remove Feature (based on blank):", round(mean(noise_index),2)))
+    message(paste("Fraction of Feature Removed (based on blank):", round(mean(noise_index),2)))
     return(data.df[!noise_index,])
 }
