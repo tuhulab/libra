@@ -28,4 +28,9 @@ calibrateBatch.inter.rlm <- function(data = ...,
   data_n_intra_inter <- data_n_intra %>%
     dplyr::left_join(data_n_inter, by = rlang::as_string(feature)) %>% dplyr::mutate(factor = intra_batch_center / multi_batch_center) %>%
     tidyr::unnest(cols = c(data_intra_calibrate)) %>% dplyr::mutate(intensity_intra_inter_calibrated = intensity_intra_calibrated / factor)
+
+  data_n_intra_inter_output <- data_n_intra_inter %>%
+    dplyr::select(-injection_sequence, -intensity_intra_calibrated, -center_intensity, -intra_batch_center, -multi_batch_center, -factor)
+
+  return(data_n_intra_inter_output)
 }
