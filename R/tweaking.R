@@ -25,7 +25,7 @@ rm_feature.bird <- function(data.df = ...,
                                            FALSE))
   message(paste("Fraction of Feature Removed (based on birds):", round(mean(data$bird),2)))
   data_output <- data %>% select(-bird)
-  return(data)
+  return(data_output)
 }
 
 #' The old method to detect early and late eluting compounds (early- and late- birds)
