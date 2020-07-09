@@ -18,5 +18,6 @@ pull.data <- function(pattern = ...,
     datalist$intensity_mean <- datalist$intensity %>% rowMeans(na.rm = TRUE)
     datalist$prevalence <- 1 - (datalist$intensity %>% is.na() %>% rowMeans())
     datalist$intensity[is.na(datalist$intensity)] <- 0
+    datalist$intensity_mean[is.na(datalist$intensity_mean)] <- 0
     return(datalist)
 }

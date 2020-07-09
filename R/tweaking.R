@@ -6,7 +6,7 @@ rm_sample <- function(data.df = ...,
                       sample_rm = ...){
   data <-
     data.df %>% dplyr::mutate(feature = paste0("F", 1:nrow(.))) %>%
-    pivot_longer(colnames(.) %>% stringr::str_match("X\\d{1,}") %>% purrr::discard(is.na), names_to = "code", values_to = "intensity") %>%
+    tidyr::pivot_longer(colnames(.) %>% stringr::str_match("X\\d{1,}") %>% purrr::discard(is.na), names_to = "code", values_to = "intensity") %>%
     left_join(sample.df, by = "code") %>%
     filter(! sample_name %in% sample_rm) %>%
     group_by(feature) %>% mutate(injection_sequence = 1:sum(.$feature == "F1"))# %>%
