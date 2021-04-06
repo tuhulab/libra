@@ -28,7 +28,7 @@ calibrateBatch.inter.rlm <- function (data = ...,
     dplyr::mutate(intensity_intra_inter_calibrated = intensity_intra_calibrated/factor)
   data_n_intra_inter_output <- data_n_intra_inter %>% dplyr::select(-intensity_intra_calibrated,
                                                                     -intra_batch_center, -multi_batch_center, -factor) %>%
-    dplyr::arrange(rlang::as_string(feature), rlang::as_string(batch), injection_sequence)
+    dplyr::arrange(!! feature, !! batch, injection_sequence)
   return(data_n_intra_inter_output)
 }
 
@@ -54,6 +54,6 @@ calibrateBatch.inter.rlm.group <- function(data = ...,
     dplyr::mutate(intensity_intra_inter_calibrated = intensity_intra_calibrated/factor)
   data_n_intra_inter_output <- data_n_intra_inter %>% dplyr::select(-intensity_intra_calibrated,
                                                                     -intra_batch_center, -multi_batch_center, -factor) %>%
-    dplyr::arrange(rlang::as_string(feature), batch, injection_sequence)
+    dplyr::arrange(!! feature, !! batch, injection_sequence)
   return(data_n_intra_inter_output)
 }
