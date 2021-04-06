@@ -1,7 +1,7 @@
 Package: libra
 Type: Package
 Title: libra: Calibrate Batch Effects of Mass Spectroscopy Based Metabolomics 
-Version: 0.1.2.3
+Version: 0.1.2.4
 Author: person("Tu", "Hu", email = "tu.hu@outlook.com", role = c("aut", "cre"))
 Maintainer: Tu Hu <tu.hu@outlook.com>
 Description: libra calibras batch effects of LC-MS based metabolomics data
